@@ -5,4 +5,4 @@ This script has been designed for apache monitoring alerts. Alerts such as time-
 Script is a work in progress. Has not been compeleted yet.
   
 To run the script:
-bash <(curl -s https://raw.githubusercontent.com/luke7858/ApacheConnectionTimeAlert/master/ApacheConnectionIssue.sh )
+bash <(curl -s https://raw.githubusercontent.com/luke7858/ApacheConnectionTime/master/ApacheConnectionIssue.sh )
