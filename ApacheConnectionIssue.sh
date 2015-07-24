@@ -13,12 +13,11 @@ bold=$(tput bold)
 UNDERLINE=$ESC_SEQ"\033[4m"
 #####################################
 
-maxclientscentos=$(grep MaxClients /etc/httpd/conf/httpd.conf | grep processes -A 1 | awk '{print $2}' | grep -v MaxClients)
- 
+ #
 ##################################
 
 neat="################################"
-DIST=$(cat /etc/issue | head -1 | cut -d' ' -f1)
+#DIST=$(cat /etc/issue | head -1 | cut -d' ' -f1)
 
 printf "$neat\n"
 printf "\n"
@@ -46,13 +45,41 @@ elif [ $Distro == "Ubuntu"] || [ $Distro == "Debian" ]; then
         esac
 fi
 }
+apache_or_nginx() {
+case $Distro in
+	'CentOS' | 'Red Hat' )
+		nginxonff=$( rpm -qa nginx )
+		httpdonoff=$( rpm -qa httpd )
+	
+		if [ $nginxonoff && $httpdonoff  ]; then
+			httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )
+			nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )	
+			#grep for port then compare with netstat	
+		elif [ $nginxonoff ]; then
+			nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )
+		elif [ $httponoff  ]; then
+			httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )	
+		fi	
+
+	;;
+	'Ubuntu' | 'Debain' )
+	
+	;;
+esac
+}
 check_httpd() {
+# grep "# WorldWideWeb HTTP$" /etc/services #this could be used, although it shows even if the service is not running
+#good for services httpd https://www.redhat.com/archives/psyche-list/2003-November/msg00036.html
+# only for centos/redhat? lsof -i :80 | grep LISTEN
+#fuser 80/tcp
+#ls -l /proc/output of command above/exe
+
 	httpdrunning=$(/etc/init.d/httpd status | grep -ic 'is running')
 	httpdport=$(netstat -plnt | grep http | awk '{print $4}' | sed 's/://g')
-	if [ ! $httpdport == "" ]; then 
+	if [ ! $httpdport = "" ]; then 
 		printf "Apache Port: $httpdport \n"
 	else
-		printf "Apache Port: No port, Apache not running"
+		printf "Apache Port: No port, Apache not running\n"
 	fi
 }
 apache_buddy() {
@@ -69,28 +96,39 @@ httpd_error_logs() {
     zerrorlogcentos=$( zgrep -i maxc /var/log/httpd/error_log* )
 }
 httpd_calculations() {
-httpd_error_logs
-difference=$(echo - | awk -v apachebuddy=$MaxcRecommend -v current=$maxclientscentos '{print current - apachebuddy}') #compare 
+    apache_buddy
+    maxclientscentos=$(grep MaxClients /etc/httpd/conf/httpd.conf | grep processes -A 1 | awk '{print $2}' | grep -v MaxClients) #current configured max connections
+    httpd_error_logs
+    difference=$(echo - | awk -v apachebuddy=$MaxcRecommend -v current=$maxclientscentos '{print apachebuddy - current}') #compare 
+    
 
-    case $difference in
-    0)
-        printf "Recommended connections: $MaxcRecommend\n"
-        printf "Configured Max Connections: "$maxclientscentos
-    ;;
-   
-    *)
-        printf "Connections is configured correctly!!\n"
-      ;;
-    esac
-   
+    if [ $difference -lt 0 ]; then
+        printf "######$RED Configuration issue$RESET######\n"
+        printf "###"$RED"MAX CLIENTS Currently Set too high!!$RESET###\n"
+        printf "\n"
+        printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
+        printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
+        printf "Difference = "$RED$difference$RESET
+        printf "\n\n"
+    else
+        printf "$difference \n"
+        printf "Configuration$GREEN OK!$RESET\n"
+        printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
+        printf "\n"
+        printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
+    fi
+
     case $MaxcConfigured in
     1 ) #change to > 1 because it could be less ####################################################################################################################################
         echo "Reached max connections!!: "$MaxcConfigured
         echo "Warning, config crap"
     ;;
     *)
-        echo "Your Current Conenctions: "$currentconcentos
-        echo "Difference = "$MaxcConfigured
+        printf "Current Status:$GREEN Not$RESET Reached Recommended Max Client\n"
+        printf "Status:$GREEN OK$RESET\n"
+        printf "Current Conenctions: $currentconcentos \n"
+        printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
+        printf "\n"
     ;;    
     esac
 
@@ -164,31 +202,15 @@ case $httpdrunning in
 ########Start of code#############
 ##################################
 check_distro
-
 if [ "$Distro" == "CentOS" ] && [ "$Version" -lt 7 ] || [ "$Distro" == "Red Hat" ] && [ "$Version" -lt 7 ]; then
-
-check_httpd
-method1
- 
-
+        check_httpd
+        method1
 elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12] && [ $Version -lt 14 ]; then
-
-
-printf "Ubuntu\n"
-
-
+        printf "Ubuntu\n"
 elif [ "$Distro" = "Debian" ] && [ "$Version" = 7 ]; then
-
-
-
-printf "Debian Not Supported Yet\n"
-
-
-
+        printf "Debian Not Supported Yet\n"
 else
-
-echo "Error! Server does not appear to be a supported version of Ubuntu or Centos"
- 
+        echo "Error! Server does not appear to be a supported version of Ubuntu or Centos"
 fi
 ###################################
 #case $variable in
