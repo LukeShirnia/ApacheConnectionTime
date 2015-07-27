@@ -13,11 +13,9 @@ bold=$(tput bold)
 UNDERLINE=$ESC_SEQ"\033[4m"
 #####################################
 
- #
 ##################################
 
 neat="################################"
-#DIST=$(cat /etc/issue | head -1 | cut -d' ' -f1)
 
 printf "$neat\n"
 printf "\n"
@@ -25,8 +23,8 @@ printf "\n"
 ####################################
 check_distro() {
 Distro=$(cat /etc/issue | head -1 | cut -d' ' -f1)
-if [ $Distro == "CentOS" ] || [ $Distro == "Red Hat" ]; then
-        case $Distro in
+if [ "$Distro" == "CentOS" ] || [ "$Distro" == "Red Hat" ]; then
+        case "$Distro" in
         "CentOS" )
                 Version=$(cat /etc/redhat-release | grep -Eo '[0-9]{1,4}' | head -1)
         ;;
@@ -34,8 +32,8 @@ if [ $Distro == "CentOS" ] || [ $Distro == "Red Hat" ]; then
                 Version=$(cat /etc/redhat-release | grep -Eo '[0-9]{1,4}' | head -1)
         ;;
         esac
-elif [ $Distro == "Ubuntu"] || [ $Distro == "Debian" ]; then
-        case $Distro in
+elif [ "$Distro" == "Ubuntu"] || [ "$Distro" == "Debian" ]; then
+        case "$Distro" in
         "Ubuntu" )
                 Version=$(cat /etc/issue | head -1 | cut -d' ' -f2 | cut -d'.' -f1)
         ;;
@@ -47,24 +45,22 @@ fi
 }
 apache_or_nginx() {
 case $Distro in
-	'CentOS' | 'Red Hat' )
-		nginxonff=$( rpm -qa nginx )
-		httpdonoff=$( rpm -qa httpd )
-	
-		if [ $nginxonoff && $httpdonoff  ]; then
+'CentOS' | 'Red Hat' )
+	nginxonff=$( rpm -qa nginx )
+	httpdonoff=$( rpm -qa httpd )
+		if [ "$nginxonoff" && "$httpdonoff"  ]; then
 			httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )
 			nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )	
 			#grep for port then compare with netstat	
-		elif [ $nginxonoff ]; then
+		elif [ "$nginxonoff" ]; then
 			nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )
-		elif [ $httponoff  ]; then
+		elif [ "$httponoff"  ]; then
 			httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )	
 		fi	
-
-	;;
-	'Ubuntu' | 'Debain' )
+;;
+'Ubuntu' | 'Debain' )
 	
-	;;
+;;
 esac
 }
 check_httpd() {
@@ -92,8 +88,66 @@ apache_buddy() {
 }
 httpd_error_logs() {
     errorlogformat=$(grep ^ErrorLog /etc/httpd/conf/httpd.conf | awk '{print $2}' | sed 's/.*[/]//')
-    errorlogcentos=$( grep -ic maxc /var/log/httpd/$errorlogformat )
-    zerrorlogcentos=$( zgrep -i maxc /var/log/httpd/error_log* )
+    errorlogcentos=$( grep -i maxc /var/log/httpd/"$errorlogformat" )
+    zerrorlogcentos=$( zgrep -i maxc /var/log/httpd/"$errorlogformat"* )
+}
+error_logs_check() {
+    if [ ! "$errorlogcentos" = "" ]; then
+    # maxclients may have been hit a previous day, try to incoporate date in the search
+            printf "Error logs - There appears to be max client related error logs: \n"
+            printf "$errorlogcentos\n"
+    else #elif
+            echo ""
+            echo "Error Logs: Nothing regarding MaxClients"
+    fi
+}
+maxc_alert_warning() {
+    printf "######$RED Configuration issue$RESET######\n"
+    printf "###"$RED"MAX CLIENTS Currently Set too high!!$RESET###\n"
+    printf "\n"
+    printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
+    printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
+    printf "Difference = "$RED$difference$RESET
+    printf "\n\n"
+}
+maxc_alert_ok() {
+    printf "$difference \n"
+    printf "Configuration$GREEN OK!$RESET\n"
+    printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
+    printf "\n"
+    printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
+}
+currentcon_alert_warning() {
+    printf "Status: Reached max connections!!: $MaxcConfigured\n"
+    printf "Status:$RED MAXIMUM!$RESET\n"
+    printf "Current Conenctions: $currentconcentos \n"
+    printf "Remaining Available Connections = $RED$MaxcConfigured$RESET\n"
+}
+currentcon_alert_ok() {
+    printf "Current Status:$GREEN Not$RESET Reached Recommended Max Client\n"
+    printf "Status:$GREEN OK$RESET\n"
+    printf "Current Conenctions: $currentconcentos \n"
+    printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
+    printf "\n"
+}
+currentcon_alert_close() {
+    printf "Current Status:$GREEN Not$RESET Reached Recommended Max Client\n"
+    printf "Status:$GREEN OK $RESET- However Max Connections Nearly Reached!!\n"
+    printf "Current Conenctions: $currentconcentos \n"
+    printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
+    #look into configuration
+    printf "\n"
+}
+alerts() {
+    
+#if [ $difference -lt 0 ]; then
+    printf "Alerts Summary: Warning!\n"
+    printf "Max Clients Status:\n"
+    printf "Current Connections"
+#elif [  ]; then
+
+
+#fi
 }
 httpd_calculations() {
     apache_buddy
@@ -101,67 +155,29 @@ httpd_calculations() {
     httpd_error_logs
     difference=$(echo - | awk -v apachebuddy=$MaxcRecommend -v current=$maxclientscentos '{print apachebuddy - current}') #compare 
     
+   # alerts
+    
+    printf "\n"
 
-    if [ $difference -lt 0 ]; then
-        printf "######$RED Configuration issue$RESET######\n"
-        printf "###"$RED"MAX CLIENTS Currently Set too high!!$RESET###\n"
-        printf "\n"
-        printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
-        printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
-        printf "Difference = "$RED$difference$RESET
-        printf "\n\n"
+    if [ $difference -lt 0 ]; then #if apache maxclients configured badly then:
+        maxc_alert_warning
     else
-        printf "$difference \n"
-        printf "Configuration$GREEN OK!$RESET\n"
-        printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
-        printf "\n"
-        printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
+        maxc_alert_ok 
     fi
 
-    case $MaxcConfigured in
-    1 ) #change to > 1 because it could be less ####################################################################################################################################
-        echo "Reached max connections!!: "$MaxcConfigured
-        echo "Warning, config crap"
-    ;;
-    *)
-        printf "Current Status:$GREEN Not$RESET Reached Recommended Max Client\n"
-        printf "Status:$GREEN OK$RESET\n"
-        printf "Current Conenctions: $currentconcentos \n"
-        printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
-        printf "\n"
-    ;;    
-    esac
+#current status: etc
+	if [ "$MaxcConfigured" -le 1 ]; then
+            currentcon_alert_warning
+	elif [ "$MaxcConfigured" -gt 1 ]; then
+            currentcon_alert_ok
+	elif [ "$MaxcConfigured" = [ 1-10 ] ]; then
+            currentcon_alert_close
+	fi
 
 
-#if there is a value configured in apache config file for MaxClients then calculate difference between current connections and configured connections
-if [ "$maxclientscentos" != "" ] && [ "$maxclientscentos" -ge 1 ];then
-       # maxcdiff=$(echo - | awk -v mc=$maxclientsrecommended -v cc=$currentconcentos '{print mc - cc}')
-#    echo "Current Connections "$currentconcentos
-
-            if [ "$MaxcConfigured" -ge 1 ]; then
-                echo "MaxClients: Not been reached"
-            elif [ "$MaxcConfigured" = [1-9] ]; then
-                echo "MaxClients: CLOSE TO LIMIT"
-            else
-                echo "MaxClients: LIMIT REACHED!"
-            fi
-# if no value has been added then
-else
-        echo ""
-        echo "MaxClients: No Configured Value In Apache Config File!!"
-        echo "Checking with apache buddy..."
-fi
-    #add awk for maxcdiff=$(awk '{$maxclientscentos - $currentconcentos}')
-
- 
-if [ "$errorlogcentos" -ge 1 ]; then
-# maxclients may have been hit a previous day, try to incoporate date in the search
-        echo "Error logs:"
-        echo $errorlogscentos
-else #elif
-####APACHE BUDDY SECTION####    
-        echo ""
-        echo "Error Logs: Nothing regarding MaxClients"
+    error_logs_check
+    
+############RAM############
         echo "Current RAM allocation to apache: $ab%"
         echo "Apache Max RAM Usage: $abram MB"
  
@@ -176,7 +192,7 @@ else #elif
 #############################
     echo ""
     echo $neat
-fi
+
 echo $neat    
 }
 ##################################
