@@ -265,7 +265,7 @@ case $httpdports in
                 esac
 #------------------------
         ;;
-        1 ) #if apache IS running:
+        * ) #if apache IS running:
             printf "Server is running: Apache\n"
             apache_buddy
             printf "\n"
