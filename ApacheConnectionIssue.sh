@@ -46,20 +46,20 @@ fi
 apache_or_nginx() {
 case $Distro in
 'CentOS' | 'Red Hat' )
-	nginxonff=$( rpm -qa nginx )
-	httpdonoff=$( rpm -qa httpd )
-		if [ "$nginxonoff" && "$httpdonoff"  ]; then
-			httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )
-			nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )	
-			#grep for port then compare with netstat	
-		elif [ "$nginxonoff" ]; then
-			nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )
-		elif [ "$httponoff"  ]; then
-			httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )	
-		fi	
+        nginxonff=$( rpm -qa nginx )
+        httpdonoff=$( rpm -qa httpd )
+                if [ "$nginxonoff" && "$httpdonoff"  ]; then
+                        httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )
+                        nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )
+                        #grep for port then compare with netstat
+                elif [ "$nginxonoff" ]; then
+                        nginxconfigport=$( grep 'listen' /etc/nginx/conf.d/default.conf | grep default | awk '{print $2}' )
+                elif [ "$httponoff"  ]; then
+                        httpconfigport=$( grep ^Listen /etc/httpd/conf/httpd.conf | awk '{print $2}' )
+                fi
 ;;
 'Ubuntu' | 'Debain' )
-	
+
 ;;
 esac
 }
@@ -69,32 +69,71 @@ check_httpd() {
 # only for centos/redhat? lsof -i :80 | grep LISTEN
 #fuser 80/tcp
 #ls -l /proc/output of command above/exe
+port=$(netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' )
+httpdports=$( netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' | wc -l )
+portcount=1
+arrayportcount=1
+portprintcounter=1
 
-	httpdrunning=$(/etc/init.d/httpd status | grep -ic 'is running')
-	httpdport=$(netstat -plnt | grep http | awk '{print $4}' | sed 's/://g')
-	if [ ! $httpdport = "" ]; then 
-		printf "Apache Port:$GREEN $httpdport$RESET \n"
-	else
-		printf "Apache Port:$RED No port$RESET, Apache$RED NOT$RESET running\n"
-	fi
+while [ $portcount -le $httpdports ]; do
+test=$( echo $port | awk '{ print $'$portcount' }'  )
+portarray[$portcount]=$test
+portcount=$[$portcount+1]
+done
+
+while [ $portprintcounter -lt $portcount ]; do #store in array
+#       printf "${portarray[$portprintcounter]}\n"
+        portprintcounter=$[$portprintcounter+1]
+done
+
+if [ $httpdports -ge 1 ]; then
+        for i in $(seq 1 $httpdports); do
+                printf "Apache Port:$GREEN ${portarray[$i]}$RESET \n"
+                i=$[$i+1]
+        done
+else
+        printf "Apache Port:$RED No port$RESET, Apache$RED NOT$RESET running\n"
+fi
 }
 check_nginx() {
-	nginxrunning=$( /etc/init.d/nginx status | grep -ic 'is running' )
-	nginxport=$( netstat -plnt | grep nginx | awk '{print $4}' | awk -F':' '{print $2}' )
-        if [ ! $nginxport = "" ]; then
-                printf "Nginx Port: $GREEN$nginxport$RESET \n"
-		#:printf "Nginx$GREEN IS$RESET running\n"
-        else
-                printf "Nginx Port:$RED No port$RESET, Nginx$RED NOT$RESET running\n"
-        fi
+#       nginxrunning=$( /etc/init.d/nginx status | grep -ic 'is running' )
+#       nginxport=$( netstat -plnt | grep nginx | awk '{print $4}' | awk -F':' '{print $2}' )
+
+nginxport=$( netstat -tlpn | grep nginx | awk '{print $4}' | awk -F':' '{print $2}' )
+nginxports=$( netstat -plnt | grep nginx | awk '{print $4}' | sed 's/://g' | wc -l )
+portcount=1
+arrayportcount=1
+portprintcounter=1
+
+while [ $portcount -le $nginxports ]; do
+test=$( echo $nginxport | awk '{ print $'$portcount' }'  )
+nginxportarray[$portcount]=$test
+portcount=$[$portcount+1]
+done
+
+while [ $portprintcounter -lt $portcount ]; do #store in array
+#       printf "${portarray[$portprintcounter]}\n"
+        portprintcounter=$[$portprintcounter+1]
+done
+
+if [ $nginxports -ge 1 ]; then
+        for i in $(seq 1 $nginxports); do
+                printf "Nginx Port:$GREEN ${nginxportarray[$i]}$RESET \n"
+                i=$[$i+1]
+        done
+else
+        printf "Nginx Port:$RED No port$RESET, Nginx$RED NOT$RESET running\n"
+fi
+
+
 }
 apache_buddy() {
-	curl -s apache2buddy.pl | perl > /dev/null 2>&1; #run apache buddy and redirect output to /dev/null, we are only looking for the log files
-	ab=$(grep -ohe 'Highest Pct .*' /var/log/apache2buddy.log | awk 'END{print $5}' | sed 's/"//g') #getting the ram % allocation for apache from logs produced above
-	abram=$(grep -ohe 'Memory: .*' /var/log/apache2buddy.log | awk 'END{print $2}' | sed 's/"//g')
-	currentconcentos=$(ps aux | grep -v grep | grep -ic /usr/sbin/httpd)
-	MaxcRecommend=$(grep -ohe 'Reccommended: .*' /var/log/apache2buddy.log | awk 'END{print $2}' | sed 's/"//g')
-	MaxcConfigured=$(echo - | awk -v max=$MaxcRecommend -v current=$currentconcentos '{print max - current }')
+        curl -s apache2buddy.pl | perl > /dev/null 2>&1; #run apache buddy and redirect output to /dev/null, we are only looking for the log files
+        ab=$(grep -ohe 'Highest Pct .*' /var/log/apache2buddy.log | awk 'END{print $5}' | sed 's/"//g') #getting the ram % allocation for apache from logs produced above
+        abram=$(grep -ohe 'Memory: .*' /var/log/apache2buddy.log | awk 'END{print $2}' | sed 's/"//g')
+        currentconcentos=$(ps aux | grep -v grep | grep -ic /usr/sbin/httpd)
+        MaxcRecommend=$(grep -ohe 'Reccommended: .*' /var/log/apache2buddy.log | awk 'END{print $2}' | sed 's/"//g')
+        MaxcConfigured=$(echo - | awk -v max=$MaxcRecommend -v current=$currentconcentos '{print max - current }')
 }
 httpd_error_logs() {
     errorlogformat=$(grep ^ErrorLog /etc/httpd/conf/httpd.conf | awk '{print $2}' | sed 's/.*[/]//')
@@ -149,7 +188,7 @@ currentcon_alert_close() {
     printf "\n"
 }
 alerts() {
-    
+
 #if [ $difference -lt 0 ]; then
     printf "Alerts Summary: Warning!\n"
     printf "Max Clients Status:\n"
@@ -163,35 +202,33 @@ httpd_calculations() {
     apache_buddy
     maxclientscentos=$(grep MaxClients /etc/httpd/conf/httpd.conf | grep processes -A 1 | awk '{print $2}' | grep -v MaxClients) #current configured max connections
     httpd_error_logs
-    difference=$(echo - | awk -v apachebuddy=$MaxcRecommend -v current=$maxclientscentos '{print apachebuddy - current}') #compare 
-    
+    difference=$(echo - | awk -v apachebuddy=$MaxcRecommend -v current=$maxclientscentos '{print apachebuddy - current}') #compare
+
    # alerts
-    
+
     printf "\n"
 
     if [ $difference -lt 0 ]; then #if apache maxclients configured badly then:
         maxc_alert_warning
     else
-        maxc_alert_ok 
+        maxc_alert_ok
     fi
 
 #current status: etc
-	if [ "$MaxcConfigured" -le 1 ]; then
+        if [ "$MaxcConfigured" -le 1 ]; then
             currentcon_alert_warning
-	elif [ "$MaxcConfigured" -gt 1 ]; then
+        elif [ "$MaxcConfigured" -gt 1 ]; then
             currentcon_alert_ok
-	elif [ "$MaxcConfigured" = [ 1-10 ] ]; then
+        elif [ "$MaxcConfigured" = [ 1-10 ] ]; then
             currentcon_alert_close
-	fi
+        fi
 
 
-	error_logs_check
-	printf "\n"
-    
-############RAM############
+        printf "\n"
+
         echo "Current RAM allocation to apache: $ab%"
         echo "Apache Max RAM Usage: $abram MB"
- 
+
         case $ab in
         [0-75] )
             echo "apache has been allocated too much ram, this could be causing an issue"
@@ -200,30 +237,32 @@ httpd_calculations() {
             echo "Apache Configuration: OK!"
         ;;
         esac
-#############################
-    echo ""
-    echo $neat
 
-echo $neat    
+        error_logs_check
+#############################
+    printf "\n"
+    printf "$neat\n"
+
+    printf "$neat\n"
 }
 ##################################
 method1() {
-case $httpdrunning in
+case $httpdports in
  #-----------------------
         0 ) #if apache is not running:
             #printf "Apache not running\n"
-           	case $nginxrunning in
-		
-		0)
-	    		printf "Please troubleshoot further\n"
-            		printf "\n"
-            		printf "$neat\n"
-		;;
-		1)
-			printf "Server is running: Nginx\n"
-			printf "\n"
-		;;
-		esac
+                case $nginxports in
+
+                0)
+                        printf "Nginx not running\n"
+                        printf "\n"
+                        printf "$neat\n"
+                ;;
+                *)
+                        printf "Server is running: Nginx\n"
+                        printf "\n"
+                ;;
+                esac
 #------------------------
         ;;
         1 ) #if apache IS running:
@@ -237,14 +276,14 @@ case $httpdrunning in
 ##################################
 ########Start of code#############
 ##################################
-	check_distro
+        check_distro
 if [ "$Distro" == "CentOS" ] && [ "$Version" -lt 7 ] || [ "$Distro" == "Red Hat" ] && [ "$Version" -lt 7 ]; then
         check_httpd
-	check_nginx
+        check_nginx
         method1
 elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12] && [ $Version -lt 14 ]; then
         printf "Ubuntu\n"
-	#method2
+        #method2
 elif [ "$Distro" = "Debian" ] && [ "$Version" = 7 ]; then
         printf "Debian Not Supported Yet\n"
 else
