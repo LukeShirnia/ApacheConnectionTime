@@ -73,10 +73,20 @@ check_httpd() {
 	httpdrunning=$(/etc/init.d/httpd status | grep -ic 'is running')
 	httpdport=$(netstat -plnt | grep http | awk '{print $4}' | sed 's/://g')
 	if [ ! $httpdport = "" ]; then 
-		printf "Apache Port: $httpdport \n"
+		printf "Apache Port:$GREEN $httpdport$RESET \n"
 	else
-		printf "Apache Port: No port, Apache not running\n"
+		printf "Apache Port:$RED No port$RESET, Apache$RED NOT$RESET running\n"
 	fi
+}
+check_nginx() {
+	nginxrunning=$( /etc/init.d/nginx status | grep -ic 'is running' )
+	nginxport=$( netstat -plnt | grep nginx | awk '{print $4}' | awk -F':' '{print $2}' )
+        if [ ! $nginxport = "" ]; then
+                printf "Nginx Port: $GREEN$nginxport$RESET \n"
+		#:printf "Nginx$GREEN IS$RESET running\n"
+        else
+                printf "Nginx Port:$RED No port$RESET, Nginx$RED NOT$RESET running\n"
+        fi
 }
 apache_buddy() {
 	curl -s apache2buddy.pl | perl > /dev/null 2>&1; #run apache buddy and redirect output to /dev/null, we are only looking for the log files
@@ -94,7 +104,7 @@ httpd_error_logs() {
 error_logs_check() {
     if [ ! "$errorlogcentos" = "" ]; then
     # maxclients may have been hit a previous day, try to incoporate date in the search
-            printf "Error logs - There appears to be max client related error logs: \n"
+            printf "Error logs: \n"
             printf "$errorlogcentos\n"
     else #elif
             echo ""
@@ -175,7 +185,8 @@ httpd_calculations() {
 	fi
 
 
-    error_logs_check
+	error_logs_check
+	printf "\n"
     
 ############RAM############
         echo "Current RAM allocation to apache: $ab%"
@@ -200,14 +211,23 @@ method1() {
 case $httpdrunning in
  #-----------------------
         0 ) #if apache is not running:
-            printf "Not running\n"
-            printf "Please troubleshoot further\n"
-            printf "\n"
-            printf "$neat\n"
+            #printf "Apache not running\n"
+           	case $nginxrunning in
+		
+		0)
+	    		printf "Please troubleshoot further\n"
+            		printf "\n"
+            		printf "$neat\n"
+		;;
+		1)
+			printf "Server is running: Nginx\n"
+			printf "\n"
+		;;
+		esac
 #------------------------
         ;;
         1 ) #if apache IS running:
-            printf "Apache: is running!\n"
+            printf "Server is running: Apache\n"
             apache_buddy
             printf "\n"
             httpd_calculations
@@ -217,12 +237,14 @@ case $httpdrunning in
 ##################################
 ########Start of code#############
 ##################################
-check_distro
+	check_distro
 if [ "$Distro" == "CentOS" ] && [ "$Version" -lt 7 ] || [ "$Distro" == "Red Hat" ] && [ "$Version" -lt 7 ]; then
         check_httpd
+	check_nginx
         method1
 elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12] && [ $Version -lt 14 ]; then
         printf "Ubuntu\n"
+	#method2
 elif [ "$Distro" = "Debian" ] && [ "$Version" = 7 ]; then
         printf "Debian Not Supported Yet\n"
 else
