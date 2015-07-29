@@ -71,61 +71,61 @@ check_httpd() {
 # only for centos/redhat? lsof -i :80 | grep LISTEN
 #fuser 80/tcp
 #ls -l /proc/output of command above/exe
-port=$(netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' )
-httpdports=$( netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' | wc -l )
-portcount=1
-arrayportcount=1
-portprintcounter=1
+	port=$(netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' )
+	httpdports=$( netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' | wc -l )
+	portcount=1
+	arrayportcount=1
+	portprintcounter=1
 
-while [ $portcount -le $httpdports ]; do
-test=$( echo $port | awk '{ print $'$portcount' }'  )
-portarray[$portcount]=$test
-portcount=$[$portcount+1]
-done
+	while [ $portcount -le $httpdports ]; do
+		test=$( echo $port | awk '{ print $'$portcount' }'  )
+		portarray[$portcount]=$test
+		portcount=$[$portcount+1]
+	done
 
-while [ $portprintcounter -lt $portcount ]; do #store in array
-#       printf "${portarray[$portprintcounter]}\n"
-        portprintcounter=$[$portprintcounter+1]
-done
+	while [ $portprintcounter -lt $portcount ]; do #store in array
+#       	printf "${portarray[$portprintcounter]}\n"
+        	portprintcounter=$[$portprintcounter+1]
+	done
 
-if [ $httpdports -ge 1 ]; then
-        for i in $(seq 1 $httpdports); do
-                printf "Apache Port:$GREEN ${portarray[$i]}$RESET \n"
-                i=$[$i+1]
-        done
-else
-        printf "Apache Port:$RED No port$RESET, Apache$RED NOT$RESET running\n"
-fi
+	if [ $httpdports -ge 1 ]; then
+        	for i in $(seq 1 $httpdports); do
+                	printf "Apache Port:$GREEN ${portarray[$i]}$RESET \n"
+                	i=$[$i+1]
+        	done
+	else
+        	printf "Apache Port:$RED No port$RESET, Apache$RED NOT$RESET running\n"
+	fi
 }
 check_nginx() {
 #	nginxrunning=$( /etc/init.d/nginx status | grep -ic 'is running' )
 #	nginxport=$( netstat -plnt | grep nginx | awk '{print $4}' | awk -F':' '{print $2}' )
 
-nginxport=$( netstat -tlpn | grep nginx | awk '{print $4}' | awk -F':' '{print $2}' )
-nginxports=$( netstat -plnt | grep nginx | awk '{print $4}' | sed 's/://g' | wc -l )
-portcount=1
-arrayportcount=1
-portprintcounter=1
+	nginxport=$( netstat -tlpn | grep nginx | awk '{print $4}' | awk -F':' '{print $2}' )
+	nginxports=$( netstat -plnt | grep nginx | awk '{print $4}' | sed 's/://g' | wc -l )
+	portcount=1
+	arrayportcount=1
+	portprintcounter=1
 
-while [ $portcount -le $nginxports ]; do
-test=$( echo $nginxport | awk '{ print $'$portcount' }'  )
-nginxportarray[$portcount]=$test
-portcount=$[$portcount+1]
-done
+	while [ $portcount -le $nginxports ]; do
+		test=$( echo $nginxport | awk '{ print $'$portcount' }'  )
+		nginxportarray[$portcount]=$test
+		portcount=$[$portcount+1]
+	done
 
-while [ $portprintcounter -lt $portcount ]; do #store in array
-#       printf "${portarray[$portprintcounter]}\n"
-        portprintcounter=$[$portprintcounter+1]
-done
+	while [ $portprintcounter -lt $portcount ]; do #store in array
+#       	printf "${portarray[$portprintcounter]}\n"
+	        portprintcounter=$[$portprintcounter+1]
+	done	
 
-if [ $nginxports -ge 1 ]; then
-        for i in $(seq 1 $nginxports); do
-                printf "Nginx Port:$GREEN ${nginxportarray[$i]}$RESET \n"
-                i=$[$i+1]
-        done
-else
-        printf "Nginx Port:$RED No port$RESET, Nginx$RED NOT$RESET running\n"
-fi
+	if [ $nginxports -ge 1 ]; then
+        	for i in $(seq 1 $nginxports); do
+                	printf "Nginx Port:$GREEN ${nginxportarray[$i]}$RESET \n"
+	                i=$[$i+1]
+        	done
+	else
+        	printf "Nginx Port:$RED No port$RESET, Nginx$RED NOT$RESET running\n"
+	fi
 
 
 }
@@ -153,9 +153,9 @@ ram_allocation() {
 	printf "\n"
 }
 httpd_error_logs() {
-    errorlogformat=$(grep ^ErrorLog /etc/httpd/conf/httpd.conf | awk '{print $2}' | sed 's/.*[/]//')
-    errorlogcentos=$( grep -i maxc /var/log/httpd/"$errorlogformat" | sort -k2M )
-    zerrorlogcentos=$( zgrep -i maxc /var/log/httpd/"$errorlogformat"* )
+	errorlogformat=$(grep ^ErrorLog /etc/httpd/conf/httpd.conf | awk '{print $2}' | sed 's/.*[/]//')
+	errorlogcentos=$( grep -i maxc /var/log/httpd/"$errorlogformat" | sort -k2M )
+	zerrorlogcentos=$( zgrep -i maxc /var/log/httpd/"$errorlogformat"* )
 }
 error_logs_check() {
 	if [ ! "$errorlogcentos" = "" ]; then
@@ -169,51 +169,49 @@ error_logs_check() {
 	fi
 }
 maxc_alert_warning() {
-    printf "######$RED Configuration issue$RESET######\n"
-    printf "###"$RED"MAX CLIENTS Currently Set too high!!$RESET###\n"
-    printf "\n"
-    printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
-    printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
-    printf "Difference = "$RED$difference$RESET
-    printf "\n\n"
+	printf "######$RED Configuration issue$RESET######\n"
+	printf "###"$RED"MAX CLIENTS Currently Set too high!!$RESET###\n"
+	printf "\n"
+	printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
+	printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
+	printf "Difference = "$RED$difference$RESET
+	printf "\n\n"
 }
 maxc_alert_ok() {
-    printf "$difference \n"
-    printf "Configuration$GREEN OK!$RESET\n"
-    printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
-    printf "\n"
-    printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
+	printf "$difference \n"
+	printf "Configuration$GREEN OK!$RESET\n"
+	printf "Max Clients in $BLUE/etc/httpd/conf/httpd.conf$RESET: $maxclientscentos\n"
+	printf "\n"
+	printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
 }
 currentcon_alert_warning() {
-    printf "$INVERT Current Status:$RESET Reached max connections!!: $MaxcConfigured\n"
-    printf "$INVERT Status:$RESET$RED MAXIMUM!$RESET\n"
-    printf "Current Conenctions: $currentconcentos \n"
-    printf "Remaining Available Connections = $RED$MaxcConfigured$RESET\n"
+	printf "$INVERT Current Status:$RESET Reached max connections!!: $MaxcConfigured\n"
+	printf "$INVERT Status:$RESET$RED MAXIMUM!$RESET\n"
+	printf "Current Conenctions: $currentconcentos \n"
+	printf "Remaining Available Connections = $RED$MaxcConfigured$RESET\n"
 }
 currentcon_alert_ok() {
-    printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
-    printf "$INVERT Status:$RESET$GREEN OK$RESET\n"
-    printf "Current Conenctions: $currentconcentos \n"
-    printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
-    printf "\n"
+	printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
+	printf "$INVERT Status:$RESET$GREEN OK$RESET\n"
+	printf "Current Conenctions: $currentconcentos \n"
+	printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
+	printf "\n"
 }
 currentcon_alert_close() {
-    printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
-    printf "$INVERT Status:$RESET$GREEN OK $RESET- However Max Connections Nearly Reached!!\n"
-    printf "Current Conenctions: $currentconcentos \n"
-    printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
+	printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
+	printf "$INVERT Status:$RESET$GREEN OK $RESET- However Max Connections Nearly Reached!!\n"
+	printf "Current Conenctions: $currentconcentos \n"
+	printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
     #look into configuration
-    printf "\n"
+	printf "\n"
 }
 alerts() {
     
 #if [ $difference -lt 0 ]; then
-    printf "Alerts Summary: Warning!\n"
-    printf "Max Clients Status:\n"
-    printf "Current Connections"
+	printf "Alerts Summary: Warning!\n"
+	printf "Max Clients Status:\n"
+	printf "Current Connections"
 #elif [  ]; then
-
-
 #fi
 }
 httpd_calculations() {
@@ -224,7 +222,6 @@ httpd_calculations() {
     
 
 		# alerts
-
 printf "$neat\n"
 printf "\n"
 
@@ -303,7 +300,7 @@ elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12] && [ $Version -lt 14 ]; t
 elif [ "$Distro" = "Debian" ] && [ "$Version" = 7 ]; then
         printf "Debian Not Supported Yet\n"
 else
-        echo "Error! Server does not appear to be a supported version of Ubuntu or Centos"
+        printf "Error! Server does not appear to be a supported version of Ubuntu or Centos\n"
 fi
 ###################################
 #case $variable in
