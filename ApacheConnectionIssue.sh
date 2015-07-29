@@ -204,6 +204,7 @@ currentcon_alert_close() {
 	printf "$INVERT Status:$RESET$GREEN OK $RESET- However Max Connections$RED Nearly$RESET Reached!!\n"
 	printf "Current Conenctions: $currentconcentos \n"
 	printf "Remaining Available Connections = $RED$MaxcConfigured$RESET\n"
+	printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
     #look into configuration
 	printf "\n"
 }
@@ -229,7 +230,7 @@ printf "\n"
 
 	if [ "$MaxcConfigured" -lt 1 ]; then #checking the current status of the configuration
             currentcon_alert_warning
-        elif [ "$MaxcConfigured" -gt 1 ]; then
+        elif [ "$MaxcConfigured" -gt 10 ]; then
             currentcon_alert_ok
         elif [ "$MaxcConfigured" -ge 1 ] && [ "$MaxcConfigured" -le 10 ]; then
             currentcon_alert_close
