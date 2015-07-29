@@ -7,6 +7,7 @@ GREEN=$ESC_SEQ"32;01m"
 RED=$ESC_SEQ"31;01m"
 RESET=$ESC_SEQ"39;49;00m"
 BLUE=$ESC_SEQ"34;01m"
+INVERT="\e[7m"
 #####Underline/bold#####
 BOLD=$ESC_SEQ"\033[1m"
 bold=$(tput bold)
@@ -157,14 +158,15 @@ httpd_error_logs() {
     zerrorlogcentos=$( zgrep -i maxc /var/log/httpd/"$errorlogformat"* )
 }
 error_logs_check() {
-    if [ ! "$errorlogcentos" = "" ]; then
+	if [ ! "$errorlogcentos" = "" ]; then
     # maxclients may have been hit a previous day, try to incoporate date in the search
-            printf "Error logs: \n"
-            printf "$errorlogcentos\n"
-    else #elif
-            echo ""
-            echo "Error Logs: Nothing regarding MaxClients"
-    fi
+		printf "$INVERT Error logs:$RESET \n"
+		printf "$errorlogcentos\n"
+	else #elif
+		printf "\n"
+		printf "$INVERT Error Logs:$RESET\n"
+		printf "Nothing regarding MaxClients\n"
+	fi
 }
 maxc_alert_warning() {
     printf "######$RED Configuration issue$RESET######\n"
@@ -183,21 +185,21 @@ maxc_alert_ok() {
     printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
 }
 currentcon_alert_warning() {
-    printf "Current Status: Reached max connections!!: $MaxcConfigured\n"
-    printf "Status:$RED MAXIMUM!$RESET\n"
+    printf "$INVERT Current Status:$RESET Reached max connections!!: $MaxcConfigured\n"
+    printf "$INVERT Status:$RESET$RED MAXIMUM!$RESET\n"
     printf "Current Conenctions: $currentconcentos \n"
     printf "Remaining Available Connections = $RED$MaxcConfigured$RESET\n"
 }
 currentcon_alert_ok() {
-    printf "Current Status:$GREEN Not$RESET Reached Recommended Max Client\n"
-    printf "Status:$GREEN OK$RESET\n"
+    printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
+    printf "$INVERT Status:$RESET$GREEN OK$RESET\n"
     printf "Current Conenctions: $currentconcentos \n"
     printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
     printf "\n"
 }
 currentcon_alert_close() {
-    printf "Current Status:$GREEN Not$RESET Reached Recommended Max Client\n"
-    printf "Status:$GREEN OK $RESET- However Max Connections Nearly Reached!!\n"
+    printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
+    printf "$INVERT Status:$RESET$GREEN OK $RESET- However Max Connections Nearly Reached!!\n"
     printf "Current Conenctions: $currentconcentos \n"
     printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
     #look into configuration
@@ -270,10 +272,18 @@ case $httpdports in
 #------------------------
         ;;
         * ) #if apache IS running:
-            printf "Server is running: Apache\n"
-            apache_buddy
-            printf "\n"
-            httpd_calculations
+		printf "Server is running: Apache\n"
+		case $nginxports in
+        	        0)
+                	;;
+                	*)
+                        	printf "Server is also running: Nginx\n"
+                        	printf "\n"
+                	;;
+                	esac
+           	apache_buddy
+		printf "\n"
+		httpd_calculations
         ;;
         esac
 }
