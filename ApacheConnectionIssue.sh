@@ -188,7 +188,9 @@ currentcon_alert_warning() {
 	printf "$INVERT Current Status:$RESET Reached max connections!!: $MaxcConfigured\n"
 	printf "$INVERT Status:$RESET$RED MAXIMUM!$RESET\n"
 	printf "Current Conenctions: $currentconcentos \n"
+	printf "Recommended connections: $BLUE$MaxcRecommend$RESET\n"
 	printf "Remaining Available Connections = $RED$MaxcConfigured$RESET\n"
+	printf "\n"
 }
 currentcon_alert_ok() {
 	printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
@@ -199,9 +201,9 @@ currentcon_alert_ok() {
 }
 currentcon_alert_close() {
 	printf "$INVERT Current Status:$RESET$GREEN Not$RESET Reached Recommended Max Client\n"
-	printf "$INVERT Status:$RESET$GREEN OK $RESET- However Max Connections Nearly Reached!!\n"
+	printf "$INVERT Status:$RESET$GREEN OK $RESET- However Max Connections$RED Nearly$RESET Reached!!\n"
 	printf "Current Conenctions: $currentconcentos \n"
-	printf "Remaining Available Connections = $GREEN$MaxcConfigured$RESET\n"
+	printf "Remaining Available Connections = $RED$MaxcConfigured$RESET\n"
     #look into configuration
 	printf "\n"
 }
@@ -225,11 +227,11 @@ httpd_calculations() {
 printf "$neat\n"
 printf "\n"
 
-if [ "$MaxcConfigured" -le 1 ]; then #checking the current status of the configuration
+	if [ "$MaxcConfigured" -lt 1 ]; then #checking the current status of the configuration
             currentcon_alert_warning
         elif [ "$MaxcConfigured" -gt 1 ]; then
             currentcon_alert_ok
-        elif [ "$MaxcConfigured" = [ 1-10 ] ]; then
+        elif [ "$MaxcConfigured" -ge 1 ] && [ "$MaxcConfigured" -le 10 ]; then
             currentcon_alert_close
         fi
 printf "$neat\n"   
