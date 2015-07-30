@@ -328,7 +328,7 @@ done
 ########Start of code#############
 ##################################
 	check_distro
-if [ "$Distro" == "CentOS" ] && [ "$Version" -lt 7 ] || [ "$Distro" == "Red Hat" ] && [ "$Version" -lt 7 ]; then
+if [ "$Distro" == "CentOS" ] && [ "$Version" -le 7 ] || [ "$Distro" == "Red Hat" ] && [ "$Version" -le 7 ]; then
         check_httpd
 	check_nginx
         method1
