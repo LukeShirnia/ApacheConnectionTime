@@ -332,7 +332,7 @@ if [ "$Distro" == "CentOS" ] && [ "$Version" -lt 7 ] || [ "$Distro" == "Red Hat"
         check_httpd
 	check_nginx
         method1
-elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12 ] && [ $Version -lt 14 ]; then
+elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12 ] && [ $Version -le 14 ]; then
         printf "Ubuntu\n"
 	check_httpd
         check_nginx
