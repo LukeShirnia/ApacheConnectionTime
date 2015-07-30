@@ -34,7 +34,7 @@ if [ "$Distro" == "CentOS" ] || [ "$Distro" == "Red Hat" ]; then
                 Version=$(cat /etc/redhat-release | grep -Eo '[0-9]{1,4}' | head -1)
         ;;
         esac
-elif [ "$Distro" == "Ubuntu"] || [ "$Distro" == "Debian" ]; then
+elif [ "$Distro" == "Ubuntu" ] || [ "$Distro" == "Debian" ]; then
         case "$Distro" in
         "Ubuntu" )
                 Version=$(cat /etc/issue | head -1 | cut -d' ' -f2 | cut -d'.' -f1)
@@ -332,7 +332,7 @@ if [ "$Distro" == "CentOS" ] && [ "$Version" -lt 7 ] || [ "$Distro" == "Red Hat"
         check_httpd
 	check_nginx
         method1
-elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12] && [ $Version -lt 14 ]; then
+elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12 ] && [ $Version -lt 14 ]; then
         printf "Ubuntu\n"
 	check_httpd
         check_nginx
