@@ -130,19 +130,23 @@ apache_buddy() {
         curl -s apache2buddy.pl | perl > /dev/null 2>&1; #run apache buddy and redirect output to /dev/null, we are only looking for the log files
         ab=$(grep -ohe 'Highest Pct .*' /var/log/apache2buddy.log | awk 'END{print $5}' | sed 's/"//g') #getting the ram % allocation for apache from logs produced above
         abram=$(grep -ohe 'Memory: .*' /var/log/apache2buddy.log | awk 'END{print $2}' | sed 's/"//g')
+if [ "$Distro" == "CentOS" ] || [ "$Distro" == "Red Hat " ]; then
         currentconcentos=$(ps aux | grep -v grep | grep -ic /usr/sbin/httpd)
-        MaxcRecommend=$(grep -ohe 'Reccommended: .*' /var/log/apache2buddy.log | awk 'END{print $2}' | sed 's/"//g')
+elif [ "$Distro" == "Ubuntu" ]; then
+	currentconcentos=$(ps aux | grep -v grep | grep -ic /usr/sbin/apache)
+fi
+        MaxcRecommend=$(grep -ohe 'Reccommendedl .*' /var/log/apache2buddy.log | awk 'END{print $2}' | sed 's/"//g')
         MaxcConfigured=$(echo - | awk -v max=$MaxcRecommend -v current=$currentconcentos '{print max - current }')
 }
 ram_allocation() {
         case $ab in
         * )
-                printf "Current RAM allocation to apache:$RED $ab%$RESET\n"
+                printf "Current RAM allocation to apache:$RED $ab%$RESET \n"
                 printf "Apache Max RAM Usage: $abram MB\n"
                 printf "Apache Configuration:$RED WARNING$RESET - Potentially Large Ram Allocation\n"
         ;;
         [0-85])
-                printf "Current RAM allocation to apache:$RED $ab%$RESET\n"
+                printf "Current RAM allocation to apache:$RED $ab%$RESET \n"
                 printf "Apache Max RAM Usage:$GREEN $abram$RESET MB\n"
                 printf "Apache Configuration:$GREEN OK!$RESET\n"
         ;;
@@ -223,10 +227,13 @@ alerts() {
 }
 httpd_calculations() {
         apache_buddy
+if [ "$Distro" == "CentOS" ] || [ "$Distro" == "Red Hat " ]; then
         maxclientscentos=$(grep MaxClients /etc/httpd/conf/httpd.conf | grep processes -A 1 | awk '{print $2}' | grep -v MaxClients) #current configured max connections
+else
+        maxclientscentos=$(grep MaxClients /etc/apache2/apache2.conf | grep processes -A 1 | awk '{print $2}' | grep -v MaxClients) #current configured max connections
+fi
         httpd_error_logs
         difference=$(echo - | awk -v apachebuddy=$MaxcRecommend -v current=$maxclientscentos '{print apachebuddy - current}') #compare
-
 
                 # alerts
 printf "$neat\n"
@@ -328,7 +335,7 @@ elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12 ] && [ $Version -le 14 ]; 
         printf "Ubuntu\n"
         check_httpd
         check_nginx
-        #method2
+        method1
 elif [ "$Distro" = "Debian" ] && [ "$Version" = 7 ]; then
         printf "Debian Not Supported Yet\n"
 else
