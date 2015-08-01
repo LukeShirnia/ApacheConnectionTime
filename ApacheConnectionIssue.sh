@@ -65,10 +65,12 @@ check_httpd() {
                 httpdports=$( netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' | wc -l )
         ;;
         "Ubuntu" )
+        #if worker module then not going to work: apache2ctl -M 2>&1 | grep -c worker
                 port=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' )
                 httpdports=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' | wc -l )
         ;;
         "Debian" )
+        #if worker module then not going to work: apache2ctl -M 2>&1 | grep -c worker
         	port=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' )
                 httpdports=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' | wc -l )
         esac
