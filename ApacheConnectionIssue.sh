@@ -61,13 +61,16 @@ esac
 check_httpd() {
         case "$Distro" in
         "CentOS" )
-                port=$(netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' )
+                port=$( netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' )
                 httpdports=$( netstat -plnt | grep http | awk '{print $4}' | sed 's/://g' | wc -l )
         ;;
         "Ubuntu" )
-                port=$(netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' )
+                port=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' )
                 httpdports=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' | wc -l )
         ;;
+        "Debian" )
+        	port=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' )
+                httpdports=$( netstat -plnt | grep apache | awk '{print $4}' | sed 's/://g' | wc -l )
         esac
 
                 portcount=1
