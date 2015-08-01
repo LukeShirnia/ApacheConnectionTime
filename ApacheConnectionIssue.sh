@@ -337,7 +337,10 @@ elif [ "$Distro" == "Ubuntu" ] && [ "$Version" -gt 12 ] && [ $Version -le 14 ]; 
         check_nginx
         method1
 elif [ "$Distro" = "Debian" ] && [ "$Version" = 7 ]; then
-        printf "Debian Not Supported Yet\n"
+        #printf "Debian Not Supported Yet\n"
+	check_httpd
+        check_nginx
+        method1
 else
         printf "Error! Server does not appear to be a supported version of Ubuntu or Centos\n"
 fi
